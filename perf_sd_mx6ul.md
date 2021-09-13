@@ -89,3 +89,13 @@ geniv        : <none>
 | 3        | 000          | 0000        |
 | 4        | 000          | 0000        |
 | 5        | 000          | 0000        |
+
+---
+
+# References:
+
+1. AN12714 i.<d/>MX Encrypted Storage Using CAAM Secure Keys - https://www.mouser.com/pdfDocs/AN12714.pdf
+2. Linux Cryptographic Acceleration on an i.<d/>MX6 - http://events17.linuxfoundation.org/sites/events/files/slides/2017-02%20-%20ELC%20-%20Hudson%20-%20Linux%20Cryptographic%20Acceleration%20on%20an%20MX6.pdf
+3. Dm-crypt - https://wiki.gentoo.org/wiki/Dm-crypt
+4. Dm-crypt full disk encryption - https://wiki.gentoo.org/wiki/Dm-crypt_full_disk_encryption
+5. cryptsetup - Linux man page - https://linux.die.net/man/8/cryptsetup
