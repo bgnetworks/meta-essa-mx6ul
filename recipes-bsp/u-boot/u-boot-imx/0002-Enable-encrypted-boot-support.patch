@@ -1,0 +1,25 @@
+From 60dc67a41cd0e76028bbc7acdc3d1d56ebd4346d Mon Sep 17 00:00:00 2001
+From: danie007 <danilselvan@gmail.com>
+Date: Wed, 11 Nov 2020 18:21:49 +0530
+Subject: [PATCH] Enable encrypted boot support
+
+Signed-off-by: danie007 <danilselvan@gmail.com>
+---
+ configs/mx6ul_14x14_evk_optee_defconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/configs/mx6ul_14x14_evk_optee_defconfig b/configs/mx6ul_14x14_evk_optee_defconfig
+index 471d33fcd0..498cbe06af 100644
+--- a/configs/mx6ul_14x14_evk_optee_defconfig
++++ b/configs/mx6ul_14x14_evk_optee_defconfig
+@@ -81,3 +81,10 @@ CONFIG_EFI_PARTITION=y
+ # Added by Yocto to support the HAB features
+ # (Secure boot)
+ CONFIG_SECURE_BOOT=y
++
++# Added by Yocto to support the HAB features
++# (Encrypted boot)
++CONFIG_SECURE_BOOT=y
++CONFIG_CMD_DEKBLOB=y
++CONFIG_IMX_CAAM_DEK_ENCAP=y
++CONFIG_CMD_PRIBLOB=y
