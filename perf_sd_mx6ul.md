@@ -1,25 +1,25 @@
-boot medium: SD Card
-class - 10
-size - 16 GB
+- boot medium: SD Card
+- class - 10
+- size - 16 GB
 
-write command:
+1.  Write command:
+    Writing 100MB data (in chunks of 1MB) to the boot medium
 
-```bash
-rm -f /dmblk/1.txt
-sync; echo 3 > /proc/sys/vm/drop_caches
-dd if=/dev/zero of=/dmblk/1.txt bs=1M count=100 && sync
-```
+            ```bash
+            rm -f /dmblk/1.txt
+            sync; echo 3 > /proc/sys/vm/drop_caches
+            dd if=/dev/zero of=/dmblk/1.txt bs=1M count=100 && sync
+            ```
 
-Writing 100MB data (in chunks of 1MB) to the boot medium
+2.  Read command:
+    Reading the written data in chunks of 1 MB from boot medium
 
-read command:
+            ```bash
+            sync; echo 3 > /proc/sys/vm/drop_caches
+            dd if=/dmblk/1.txt of=/dev/null bs=1M count=100 && sync
+            ```
 
-```bash
-sync; echo 3 > /proc/sys/vm/drop_caches
-dd if=/dmblk/1.txt of=/dev/null bs=1M count=100 && sync
-```
-
-Reading the written data in chunks of 1 MB from boot medium
+---
 
 ## Plain block readings
 
@@ -37,21 +37,9 @@ as a base line
 
 ---
 
-## Which cipher:hash combination?
+## Which `cipher:hash` combination?
 
-run `cryptsetup -c ... -s ... benchmark`. Issuing the command without `-c` and `-s` runs the benchmark for a number of different choices.
-
-```log
-root@imx6ulevk:~# cryptsetup benchmark
-# Tests are approximate using memory only (no storage IO).
-#     Algorithm |       Key |      Encryption |      Decryption
-        aes-cbc        256b        24.4 MiB/s        23.6 MiB/s <---accelerated by CAAM
-        aes-xts        256b        18.9 MiB/s        18.8 MiB/s <---no hardware acceleration
-```
-
-DM-Crypt performs cryptographic operations via the interfaces provided by the Linux kernel crypto API. The kernel crypto API defines a standard, extensible interface to ciphers and other data transformations implemented in the kernel (or as loadable modules). DM-Crypt parses the cipher specification `aes-cbc-essiv:sha256` passed as part of its mapping table and instantiates the corresponding transforms via the kernel crypto API.
-
-To list the available cryptographic transformations on the target:
+**`AES` in `CBC` mode with `SHA256` for hashing** is chosen as the algorithm of choice for this experiment as this has the direct `CAAM` implementation.
 
 ```log
 root@imx6ulevk:~# cat /proc/crypto
@@ -68,9 +56,90 @@ blocksize    : 16
 ivsize       : 16
 maxauthsize  : 32
 geniv        : <none>
+
+root@imx6ulevk:~# cryptsetup luksDump /dev/mmcblk1p3
+LUKS header information
+Version:        2
+Epoch:          5
+Metadata area:  16384 [bytes]
+Keyslots area:  16744448 [bytes]
+UUID:           ad554c0b-9f1f-401b-b58d-a04e67cfe5b2
+Label:          (no label)
+Subsystem:      (no subsystem)
+Flags:          (no flags)
+
+Data segments:
+  0: crypt
+        offset: 16777216 [bytes]
+        length: (whole device)
+        cipher: aes-cbc-essiv:sha256
+        sector: 512 [bytes]
+
+Keyslots:
+  1: luks2
+        Key:        256 bits
+        Priority:   normal
+        Cipher:     aes-cbc-essiv:sha256
+        Cipher key: 256 bits
+        PBKDF:      argon2i
+        Time cost:  4
+        Memory:     11091
+        Threads:    1
+        Salt:       36 af 62 a6 6b da 4a 6c 85 d3 86 17 b6 14 ff e5
+                    83 d7 bb 4b cd 89 95 a0 25 e6 4a e7 ed 1d 5f 3b
+        AF stripes: 4000
+        AF hash:    sha256
 ```
 
-**NOTE**: AES in XTS is the most convenient cipher for block-oriented storage devices and shows significant performance gain, however, this mode is not natively supported on i.<d/>MX’s CAAM module.
+**NOTE**: AES in XTS is the most convenient cipher for block-oriented storage devices and shows significant performance gain, however, this mode is not _natively_ supported on i.<d/>MX’s CAAM module.
+
+## With CAAM Acceleration
+
+DM-Crypt performs cryptographic operations via the interfaces provided by the Linux kernel crypto API. The kernel crypto API defines a standard, extensible interface to ciphers and other data transformations implemented in the kernel (or as loadable modules).
+
+DM-Crypt parses the cipher specification `aes-cbc-essiv:sha256` passed as part of its mapping table and instantiates the corresponding transforms via the kernel crypto API.
+
+Run `cryptsetup benchmark` to get a speed comparison of different choices. The following shows the comparison between `AES-XTS` and `AES-CBC` for `256 bytes` key length.
+
+```log
+root@imx6ulevk:~# cat /proc/crypto
+name         : cbc(aes)
+driver       : cbc-aes-caam
+module       : kernel
+priority     : 3000
+refcnt       : 3
+selftest     : passed
+internal     : no
+type         : givcipher
+async        : yes
+blocksize    : 16
+min keysize  : 16
+max keysize  : 32
+ivsize       : 16
+geniv        : <built-in>
+
+name         : xts(aes)
+driver       : xts(ecb-aes-caam)
+module       : kernel
+priority     : 3000
+refcnt       : 1
+selftest     : passed
+internal     : no
+type         : skcipher
+async        : yes
+blocksize    : 16
+min keysize  : 32
+max keysize  : 64
+ivsize       : 16
+chunksize    : 16
+walksize     : 16
+
+root@imx6ulevk:~# cryptsetup benchmark
+# Tests are approximate using memory only (no storage IO).
+#     Algorithm |       Key |      Encryption |      Decryption
+        aes-cbc        256b        24.4 MiB/s        23.6 MiB/s
+        aes-xts        256b        18.9 MiB/s        18.8 MiB/s
+```
 
 | S.<d/>No | Write (MB/s) | Read (MB/s) |
 | -------- | ------------ | ----------- |
@@ -82,13 +151,56 @@ geniv        : <none>
 
 ---
 
+## Without Hardware Acceleration (CAAM)
+
+```log
+root@imx6ulevk:~# cat /proc/crypto
+name         : cbc(aes)
+driver       : cbc(aes-generic)
+module       : kernel
+priority     : 100
+refcnt       : 1
+selftest     : passed
+internal     : no
+type         : skcipher
+async        : no
+blocksize    : 16
+min keysize  : 16
+max keysize  : 32
+ivsize       : 16
+chunksize    : 16
+walksize     : 16
+
+name         : xts(aes)
+driver       : xts(ecb(aes-generic))
+module       : kernel
+priority     : 100
+refcnt       : 1
+selftest     : passed
+internal     : no
+type         : skcipher
+async        : no
+blocksize    : 16
+min keysize  : 32
+max keysize  : 64
+ivsize       : 16
+chunksize    : 16
+walksize     : 16
+
+root@imx6ulevk:~# cryptsetup benchmark
+# Tests are approximate using memory only (no storage IO).
+#     Algorithm |       Key |      Encryption |      Decryption
+        aes-cbc        256b         8.5 MiB/s         8.5 MiB/s
+        aes-xts        256b        11.6 MiB/s        10.7 MiB/s
+```
+
 | S.<d/>No | Write (MB/s) | Read (MB/s) |
 | -------- | ------------ | ----------- |
-| 1        | 000          | 0000        |
-| 2        | 000          | 0000        |
-| 3        | 000          | 0000        |
-| 4        | 000          | 0000        |
-| 5        | 000          | 0000        |
+| 1        | 9.3          | 5.8         |
+| 2        | 9.4          | 5.8         |
+| 3        | 9.3          | 5.8         |
+| 4        | 9.3          | 5.8         |
+| 5        | 8.9          | 5.8         |
 
 ---
 

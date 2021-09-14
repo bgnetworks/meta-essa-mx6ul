@@ -22,7 +22,7 @@ cipher="aes-cbc-essiv:sha256"
 [ -e $s_block ] && {
 
     # (Optional) unmounting & closing the encrypted block
-    umount "$mpoint"
+    umount $mpoint 2>/dev/null
     $s_utility close crypt_target
 
     # not format the device, but sets up the LUKS device header and
@@ -53,7 +53,7 @@ cipher="aes-cbc-essiv:sha256"
     echo -n "$PASSPHRASE" | $s_utility luksRemoveKey $s_block -
 
     # decrypting with key file
-    $s_utility luksOpen -d $d_key $s_block cryptcryp    _target
+    $s_utility luksOpen -d $d_key $s_block crypt_target
 
     echo Creating auto mount service
 
