@@ -3,7 +3,7 @@
 # sys_setup.sh
 # Configure system for the first time
 #
-# 15.07.200
+# 15.07.2021
 # Daniel Selvan, Jasmin Infotech
 
 ###################################################################################################
@@ -22,7 +22,7 @@ cipher="aes-cbc-essiv:sha256"
 [ -e $s_block ] && {
 
     # (Optional) unmounting & closing the encrypted block
-    umount $mpoint 2>/dev/null
+    umount $mpoint
     $s_utility close crypt_target
 
     # not format the device, but sets up the LUKS device header and

@@ -1,29 +1,23 @@
+<!-- File: perf_sd_mx6ul.md
+     Author: Daniel Selvan, Jasmin Infotech
+-->
+
 - boot medium: SD Card
 - class - 10
 - size - 16 GB
 
-1.  Write command:
-    Writing 100MB data (in chunks of 1MB) to the boot medium
+The tests are performed by [disk_benchmark.sh](recipes-support/sys-setup/files/disk_benchmark.sh) script for 100MB data. The chunk size can be specified by modifying the script.
 
-            ```bash
-            rm -f /dmblk/1.txt
-            sync; echo 3 > /proc/sys/vm/drop_caches
-            dd if=/dev/zero of=/dmblk/1.txt bs=1M count=100 && sync
-            ```
+**NOTE**:
 
-2.  Read command:
-    Reading the written data in chunks of 1 MB from boot medium
-
-            ```bash
-            sync; echo 3 > /proc/sys/vm/drop_caches
-            dd if=/dmblk/1.txt of=/dev/null bs=1M count=100 && sync
-            ```
+1. For writing the source is `/dev/zero` to avoid data bottleneck. Hence the real world performance may decrease slightly with the source read speed.
+2. For reading the destination is se to `/dev/null` again to eliminate the writing bottleneck.
 
 ---
 
 ## Plain block readings
 
-as a base line
+as a base line (1MB blocks)
 
 | S.<d/>No | Write (MB/s) | Read (MB/s) |
 | -------- | ------------ | ----------- |
@@ -40,6 +34,9 @@ as a base line
 ## Which `cipher:hash` combination?
 
 **`AES` in `CBC` mode with `SHA256` for hashing** is chosen as the algorithm of choice for this experiment as this has the direct `CAAM` implementation.
+
+- cipher - aes-cbc-essiv:sha256
+- keysize - 256 bits
 
 ```log
 root@imx6ulevk:~# cat /proc/crypto
@@ -141,6 +138,8 @@ root@imx6ulevk:~# cryptsetup benchmark
         aes-xts        256b        18.9 MiB/s        18.8 MiB/s
 ```
 
+(1MB blocks)
+
 | S.<d/>No | Write (MB/s) | Read (MB/s) |
 | -------- | ------------ | ----------- |
 | 1        | 14.0         | 10.7        |
@@ -193,6 +192,8 @@ root@imx6ulevk:~# cryptsetup benchmark
         aes-cbc        256b         8.5 MiB/s         8.5 MiB/s
         aes-xts        256b        11.6 MiB/s        10.7 MiB/s
 ```
+
+(1MB blocks)
 
 | S.<d/>No | Write (MB/s) | Read (MB/s) |
 | -------- | ------------ | ----------- |
