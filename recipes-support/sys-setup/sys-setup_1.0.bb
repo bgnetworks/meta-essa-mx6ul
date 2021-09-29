@@ -2,7 +2,7 @@ SUMMARY = "system initial setup script"
 LICENSE = "CLOSED"
 
 SRC_URI = "file://sys_setup.sh"
-SRC_URI = "file://disk_benchmark.sh"
+SRC_URI += "file://disk_benchmark.sh"
 
 RDEPENDS_${PN} += "bash"
 

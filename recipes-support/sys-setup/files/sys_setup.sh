@@ -17,7 +17,8 @@ PASSPHRASE="This isn't a very secure passphrase."
 s_block="/dev/mmcblk1p3" # Update as needed
 d_key="/data/decrypt.key"
 mpoint="/dmblk"
-cipher="aes-cbc-essiv:sha256"
+cipher="aes-xts-plain64"
+# cipher="aes-cbc-essiv:sha256"
 
 [ -e $s_block ] && {
 
@@ -41,7 +42,7 @@ cipher="aes-cbc-essiv:sha256"
 
     CAAM_RNG="/dev/hwrng"
     # Creating a key file, use CAAM TRNG if present
-    dd bs=512 count=4 if=$([ -f "CAAM_RNG" ] && echo "CAAM_RNG" || echo "/dev/urandom") of=$d_key iflag=fullblock
+    dd bs=512 count=4 if=$([ -f "$CAAM_RNG" ] && echo "$CAAM_RNG" || echo "/dev/urandom") of=$d_key iflag=fullblock
 
     # Deny any access for other users than root(read only)
     chmod 400 $d_key

@@ -30,6 +30,7 @@ boot_med=sd
 dt=$(date '+%Y%m%d%H%M%S')
 
 # rm -f dm_perf_"$device"_$boot_med*.md # For testing
+# cryptsetup status crypt_target
 
 file_name=dm_perf_"$device"_"$boot_med"_$dt.md
 
