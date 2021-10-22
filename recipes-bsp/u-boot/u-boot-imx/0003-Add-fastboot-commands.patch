@@ -1,6 +1,6 @@
-From 5a84798c66d126747eee02e3893d176af3558dd4 Mon Sep 17 00:00:00 2001
-From: danie007 <danilselvan@gmail.com>
-Date: Tue, 17 Nov 2020 14:57:32 +0530
+From ca9d19cfd2d54f95da2ba86337a82535ca205cd1 Mon Sep 17 00:00:00 2001
+From: danie007 <daniel.selvan@jasmin-infotech.com>
+Date: Fri, 22 Oct 2021 11:57:00 +0530
 Subject: [PATCH] Add fastboot commands
 
 Fastboot commands,
@@ -9,13 +9,13 @@ Fastboot commands,
   3. read-srktbl
 are added to automate the encryption with `UUU` tool
 
-Signed-off-by: danie007 <danilselvan@gmail.com>
+Signed-off-by: danie007 <daniel.selvan@jasmin-infotech.com>
 ---
- drivers/fastboot/fb_fsl/fb_fsl_getvar.c | 142 +++++++++++++++++++++++-
- 1 file changed, 137 insertions(+), 5 deletions(-)
+ drivers/fastboot/fb_fsl/fb_fsl_getvar.c | 143 +++++++++++++++++++++++-
+ 1 file changed, 138 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/fastboot/fb_fsl/fb_fsl_getvar.c b/drivers/fastboot/fb_fsl/fb_fsl_getvar.c
-index 8ebb0da114..660065a403 100644
+index 457b5ae123..6c7bd24049 100644
 --- a/drivers/fastboot/fb_fsl/fb_fsl_getvar.c
 +++ b/drivers/fastboot/fb_fsl/fb_fsl_getvar.c
 @@ -1,6 +1,9 @@
@@ -30,27 +30,27 @@ index 8ebb0da114..660065a403 100644
  #include <common.h>
 @@ -20,6 +23,7 @@
  #include <asm/setup.h>
- #include <environment.h>
+ #include <env.h>
  #include <version.h>
 +#include <mapmem.h>
  
  #ifdef CONFIG_AVB_SUPPORT
  #include <dt_table.h>
-@@ -48,10 +52,11 @@
+@@ -52,10 +56,11 @@
  #endif
  
  #if defined(CONFIG_ANDROID_THINGS_SUPPORT) && defined(CONFIG_ARCH_IMX8M)
--#define FASTBOOT_COMMON_VAR_NUM 14
-+#define FASTBOOT_COMMON_VAR_NUM 15
- #else
--#define FASTBOOT_COMMON_VAR_NUM 13
+-#define FASTBOOT_COMMON_VAR_NUM 15
 +#define FASTBOOT_COMMON_VAR_NUM 16
+ #else
+-#define FASTBOOT_COMMON_VAR_NUM 14
++#define FASTBOOT_COMMON_VAR_NUM 17
  #endif
 +#define FASTBOOT_COMMON_HIDDEN_VAR_NUM 3
  
  #define FASTBOOT_VAR_YES    "yes"
  #define FASTBOOT_VAR_NO     "no"
-@@ -74,13 +79,22 @@ char *fastboot_common_var[FASTBOOT_COMMON_VAR_NUM] = {
+@@ -79,13 +84,22 @@ char *fastboot_common_var[FASTBOOT_COMMON_VAR_NUM] = {
  #if defined(CONFIG_ANDROID_THINGS_SUPPORT) && defined(CONFIG_ARCH_IMX8M)
  	"baseboard_id"
  #endif
@@ -59,13 +59,13 @@ index 8ebb0da114..660065a403 100644
 +	"read-fuses",
 +	"read-srktbl",
  };
- 
++ 
 +extern int fuse_read(u32 bank, u32 word, u32 *val);
 +
 +// Added by BGN
 +static void dek_blob_read(char *buffer);
 +static void fuse_bank_read(char *buffer, int header);
-+
+ 
  /* at-vboot-state variable list */
  #ifdef CONFIG_AVB_ATX
  #define AT_VBOOT_STATE_VAR_NUM 6
@@ -74,11 +74,10 @@ index 8ebb0da114..660065a403 100644
  
  char *fastboot_at_vboot_state_var[AT_VBOOT_STATE_VAR_NUM] = {
  	"bootloader-locked",
-@@ -153,6 +167,14 @@ static void uuid_hex2string(uint8_t *uuid, char* buf, uint32_t uuid_len, uint32_
- #if defined(CONFIG_ANDROID_THINGS_SUPPORT) && defined(CONFIG_ARCH_IMX8M)
+@@ -159,6 +173,14 @@ static void uuid_hex2string(uint8_t *uuid, char* buf, uint32_t uuid_len, uint32_
  int get_imx8m_baseboard_id(void);
  #endif
-+ 
+ 
 +// Added by BGN
 +#define MAX_FUSES_PER_FETCH   4
 +#define ASCII_BYTES_PER_FUSE  8
@@ -86,10 +85,11 @@ index 8ebb0da114..660065a403 100644
 +#define DFLT_DEK_BUFFER_SIZE (64)
 +char dek_buffer[DFLT_DEK_BUFFER_SIZE];
 +char fuse_buffer[DFLT_FUSE_BUFFER_SIZE];
- 
++
  static int get_single_var(char *cmd, char *response)
  {
-@@ -200,7 +222,27 @@ static int get_single_var(char *cmd, char *response)
+ 	char *str = cmd;
+@@ -214,7 +236,27 @@ static int get_single_var(char *cmd, char *response)
  		strncat(response, "0mV", chars_left);
  	} else if (!strcmp_l1("battery-soc-ok", cmd)) {
  		strncat(response, "yes", chars_left);
@@ -118,16 +118,17 @@ index 8ebb0da114..660065a403 100644
  		strncat(response, VARIANT_NAME, chars_left);
  	} else if (!strcmp_l1("off-mode-charge", cmd)) {
  		strncat(response, "1", chars_left);
-@@ -455,7 +497,7 @@ void fastboot_getvar(char *cmd, char *response)
+@@ -485,7 +527,8 @@ void fastboot_getvar(char *cmd, char *response)
  
  
  		/* get common variables */
 -		for (n = 0; n < FASTBOOT_COMMON_VAR_NUM; n++) {
 +		for (n = 0; n < FASTBOOT_COMMON_VAR_NUM - FASTBOOT_COMMON_HIDDEN_VAR_NUM; n++) {
++
  			snprintf(response, FASTBOOT_RESPONSE_LEN, "INFO%s:", fastboot_common_var[n]);
  			get_single_var(fastboot_common_var[n], response);
  			fastboot_tx_write_more(response);
-@@ -569,3 +611,93 @@ void fastboot_getvar(char *cmd, char *response)
+@@ -605,3 +648,93 @@ void fastboot_getvar(char *cmd, char *response)
  		return;
  	}
  }

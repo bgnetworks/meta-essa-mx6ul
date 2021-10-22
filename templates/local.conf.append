@@ -1,38 +1,26 @@
 
-# Appended fragment from meta-bgn/meta-6ul/templates
+# Appended fragment from meta-essa-mx6ul/templates
 # Optimised build template
 
 PREFERRED_PROVIDER_u-boot = "u-boot-imx"
 PREFERRED_PROVIDER_virtual/bootloader = "u-boot-imx"
 
-
-# Linux kernel version: 4.19
 PREFERRED_PROVIDER_virtual/kernel = "linux-imx"
 
 VIRTUAL-RUNTIME_init_manager = "systemd"
 VIRTUAL-RUNTIME_initscript = "systemd-compat-units"
 
-DISTRO_FEATURES_append = " systemd"
-
-# Text UI library
-# system performance analyser (startup)
-# GNU’s dd is required instead of Busybox’s dd later for benchmarking
-IMAGE_INSTALL_append = " \
-    whiptail \
-    systemd-analyze \
-    coreutils \
-    "
-
-IMAGE_OVERHEAD_FACTOR = "1.2"
-
-# Vigiles is a vulnerability management tool that provides build-time Yocto CVE Analysis of target images
-# For more details: https://www.nxp.com/docs/en/user-guide/IMX_YOCTO_PROJECT_USERS_GUIDE.pdf
-# INHERIT += "vigiles"
+IMAGE_OVERHEAD_FACTOR = "5"
 
 # Disabling test utilities
 IMAGE_INSTALL_remove += " \
     packagegroup-fsl-tools-testapps \
     wic-tools \
+    "
+
+DISTRO_FEATURES_append = " \
+    systemd \
+    optee \
     "
 
 # Ripping down unwanted DISTRO features
@@ -60,7 +48,6 @@ DISTRO_FEATURES_remove += " \
 PACKAGE_EXCLUDE = " \
     perl5 \
     sqlite3 \
-    udev-hwdb \
     bluez3 \
     bluez4\
     bluez5\
@@ -78,6 +65,7 @@ MACHINE_FEATURES_remove += " \
     bluetooth \
     bcm4339 \
     bcm43455 \
+    rtc \
     "
 
 # Setting the root password as toor
@@ -89,10 +77,3 @@ MACHINE_FEATURES_remove += " \
 # Replace $HOME with your home directory
 # DL_DIR = "$HOME/.yocto/downloads/"
 # SSTATE_DIR = "$HOME/.yocto/sstate-cache/imx6/"
-
-# TA_PUBLIC_KEY = "/workdir/Desktop/keys/rsa2048_pub.pem"
-# Trial with certificate (self signed) - didn't work
-# TA_PUBLIC_KEY = "/workdir/Desktop/keys/tee_cert.pem"
-
-# It's our responsibility to protect the private key
-# TA_SIGN_KEY = "/workdir/Desktop/keys/rsa2048.pem"
