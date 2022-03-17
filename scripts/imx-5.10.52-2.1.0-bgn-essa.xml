@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+
+    <include name="imx-5.10.52-2.1.0.xml" />
+
+    <remote fetch="https://github.com/bgnetworks" name="bgn" />
+
+    <project name="meta-essa-mx6ul" remote="bgn" revision="hardknott" path="sources/meta-essa-mx6ul">
+        <linkfile src="scripts/mx6ul-setup-essa.sh" dest="mx6ul-setup-essa.sh" />
+    </project>
+
+</manifest>
