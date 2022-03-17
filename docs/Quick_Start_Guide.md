@@ -69,7 +69,7 @@ The Yocto meta directories are located in the `sources` directory:
 Setup the build environment:
 
 ```bash
-MACHINE=imx6ulevk DISTRO=fsl-imx-fb source mx6ul-setup-essa.sh -b build
+MACHINE=imx6ulevk DISTRO=fslc-framebuffer source mx6ul-setup-essa.sh -b build
 ```
 
 Build the core image:
